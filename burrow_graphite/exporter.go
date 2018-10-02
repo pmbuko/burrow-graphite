@@ -31,10 +31,9 @@ func (be *BurrowExporter) processGroup(cluster, group string, gh *graphite.Graph
 	}
 
 	for _, partition := range status.Status.Partitions {
-	  metrics := make([]graphite.Metric, 2)
+	  metrics := make([]graphite.Metric, 1)
 	  metricNamePrefix := "services.burrow" + "." + status.Status.Cluster + "." + "group" + "." + status.Status.Group + "." + "topic" + "." + partition.Topic + "." + strconv.Itoa(int(partition.Partition))
 	  metrics[0] = graphite.NewMetric(metricNamePrefix + "." + "Lag", strconv.Itoa(int(partition.End.Lag)), time.Now().Unix())
-	  metrics[1] = graphite.NewMetric(metricNamePrefix + "." + "Offset", strconv.Itoa(int(partition.End.Offset)), time.Now().Unix())
 
     // fmt.Printf("%v\n", metrics)
 	  err := gh.SendMetrics(metrics)
@@ -45,9 +44,8 @@ func (be *BurrowExporter) processGroup(cluster, group string, gh *graphite.Graph
     		return
     }
 /*
-    fmt.Printf("Group: %s, partition %d, endLag: %d, endOffset: %d\n", group, int(partition.Partition),
-      int(partition.End.Lag),
-      int(partition.End.Offset))
+    fmt.Printf("Group: %s, partition %d, endLag: %d, group, int(partition.Partition),
+      int(partition.End.Lag)
 */
 	}
 
