@@ -13,7 +13,7 @@ import (
   "github.com/rgannu/burrow-graphite/burrow_graphite"
 )
 
-var Version = "0.1"
+var Version = "0.2"
 
 func main() {
 	app := cli.NewApp()

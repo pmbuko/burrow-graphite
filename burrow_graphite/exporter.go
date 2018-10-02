@@ -32,7 +32,7 @@ func (be *BurrowExporter) processGroup(cluster, group string, gh *graphite.Graph
 
 	for _, partition := range status.Status.Partitions {
 	  metrics := make([]graphite.Metric, 2)
-	  metricNamePrefix := "kafka" + "." + status.Status.Cluster + "." + "group" + "." + status.Status.Group + "." + "topic" + "." + partition.Topic + "." + strconv.Itoa(int(partition.Partition))
+	  metricNamePrefix := "services.burrow" + "." + status.Status.Cluster + "." + "group" + "." + status.Status.Group + "." + "topic" + "." + partition.Topic + "." + strconv.Itoa(int(partition.Partition))
 	  metrics[0] = graphite.NewMetric(metricNamePrefix + "." + "Lag", strconv.Itoa(int(partition.End.Lag)), time.Now().Unix())
 	  metrics[1] = graphite.NewMetric(metricNamePrefix + "." + "Offset", strconv.Itoa(int(partition.End.Offset)), time.Now().Unix())
 
@@ -51,7 +51,7 @@ func (be *BurrowExporter) processGroup(cluster, group string, gh *graphite.Graph
 */
 	}
 
-  totalLagMetricName := "kafka" + "." + status.Status.Cluster + "." + "group" + "." + status.Status.Group + "." + "TotalLag"
+  totalLagMetricName := "services.burrow" + "." + status.Status.Cluster + "." + "group" + "." + status.Status.Group + "." + "TotalLag"
   err = gh.SimpleSend(totalLagMetricName, strconv.Itoa(int(status.Status.TotalLag)))
   if err != nil {
       log.WithFields(log.Fields{
@@ -60,30 +60,6 @@ func (be *BurrowExporter) processGroup(cluster, group string, gh *graphite.Graph
       return
   }
   // fmt.Printf("MetricName: %s, value: %s\n", totalLagMetricName, strconv.Itoa(int(status.Status.TotalLag)))
-}
-
-func (be *BurrowExporter) processTopic(cluster, topic string, gh *graphite.Graphite) {
-	details, err := be.client.ClusterTopicDetails(cluster, topic)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err":   err,
-			"topic": topic,
-		}).Error("error getting status for cluster topic. returning.")
-		return
-	}
-
-	for i, offset := range details.Offsets {
-    metricName := "kafka" + "." + cluster + "." + "topic" + "." + topic + "." + strconv.Itoa(i) + "." + "offset"
-    err := gh.SimpleSend(metricName, strconv.Itoa(int(offset)))
-    if err != nil {
-        log.WithFields(log.Fields{
-          "err": err,
-        }).Error("Error in sending metrics to Graphite. returning.")
-        return
-    }
-
-    // fmt.Printf("Topic: %s, partition: %s, offset: %d\n", topic, strconv.Itoa(i), int(offset))
-	}
 }
 
 func (be *BurrowExporter) processCluster(cluster string, gh *graphite.Graphite) {
@@ -114,15 +90,6 @@ func (be *BurrowExporter) processCluster(cluster string, gh *graphite.Graphite) 
 			defer wg.Done()
 			be.processGroup(cluster, g, gh)
 		}(group)
-	}
-
-	for _, topic := range topics.Topics {
-		wg.Add(1)
-
-		go func(t string) {
-			defer wg.Done()
-			be.processTopic(cluster, t, gh)
-		}(topic)
 	}
 
 	wg.Wait()
