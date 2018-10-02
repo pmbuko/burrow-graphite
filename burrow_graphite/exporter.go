@@ -72,15 +72,6 @@ func (be *BurrowExporter) processCluster(cluster string, gh *graphite.Graphite) 
 		return
 	}
 
-	topics, err := be.client.ListClusterTopics(cluster)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err":     err,
-			"cluster": cluster,
-		}).Error("error listing cluster topics. returning.")
-		return
-	}
-
 	wg := sync.WaitGroup{}
 
 	for _, group := range groups.ConsumerGroups {

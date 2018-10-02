@@ -10,7 +10,7 @@ import (
 	"context"
 	"os/signal"
 	"syscall"
-  "github.com/rgannu/burrow-graphite/burrow_graphite"
+  "github.com/pmbuko/burrow-graphite/burrow_graphite"
 )
 
 var Version = "0.2"
