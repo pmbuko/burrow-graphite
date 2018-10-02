@@ -16,6 +16,7 @@ type BurrowExporter struct {
 	client            *BurrowClient
 	graphiteHost      string
 	graphitePort      int
+	graphitePrefix    string
 	interval          int
 	wg                sync.WaitGroup
 }
@@ -32,7 +33,7 @@ func (be *BurrowExporter) processGroup(cluster, group string, gh *graphite.Graph
 
 	for _, partition := range status.Status.Partitions {
 	  metrics := make([]graphite.Metric, 2)
-	  metricNamePrefix := "kafka" + "." + status.Status.Cluster + "." + "group" + "." + status.Status.Group + "." + "topic" + "." + partition.Topic + "." + strconv.Itoa(int(partition.Partition))
+	  metricNamePrefix := be.graphitePrefix + "." + status.Status.Cluster + "." + "group" + "." + status.Status.Group + "." + "topic" + "." + partition.Topic + "." + strconv.Itoa(int(partition.Partition))
 	  metrics[0] = graphite.NewMetric(metricNamePrefix + "." + "Lag", strconv.Itoa(int(partition.End.Lag)), time.Now().Unix())
 	  metrics[1] = graphite.NewMetric(metricNamePrefix + "." + "Offset", strconv.Itoa(int(partition.End.Offset)), time.Now().Unix())
 
@@ -51,7 +52,7 @@ func (be *BurrowExporter) processGroup(cluster, group string, gh *graphite.Graph
 */
 	}
 
-  totalLagMetricName := "kafka" + "." + status.Status.Cluster + "." + "group" + "." + status.Status.Group + "." + "TotalLag"
+  totalLagMetricName := be.graphitePrefix + "." + status.Status.Cluster + "." + "group" + "." + status.Status.Group + "." + "TotalLag"
   err = gh.SimpleSend(totalLagMetricName, strconv.Itoa(int(status.Status.TotalLag)))
   if err != nil {
       log.WithFields(log.Fields{
@@ -73,7 +74,7 @@ func (be *BurrowExporter) processTopic(cluster, topic string, gh *graphite.Graph
 	}
 
 	for i, offset := range details.Offsets {
-    metricName := "kafka" + "." + cluster + "." + "topic" + "." + topic + "." + strconv.Itoa(i) + "." + "offset"
+    metricName := be.graphitePrefix + "." + cluster + "." + "topic" + "." + topic + "." + strconv.Itoa(i) + "." + "offset"
     err := gh.SimpleSend(metricName, strconv.Itoa(int(offset)))
     if err != nil {
         log.WithFields(log.Fields{
@@ -215,11 +216,12 @@ func (be *BurrowExporter) mainLoop(ctx context.Context) {
 	}
 }
 
-func MakeBurrowExporter(burrowUrl string, graphiteHost string, graphitePort int, interval int) *BurrowExporter {
+func MakeBurrowExporter(burrowUrl string, graphiteHost string, graphitePort int, graphitePrefix string, interval int) *BurrowExporter {
 	return &BurrowExporter{
 		client:            MakeBurrowClient(burrowUrl),
 		graphiteHost:      graphiteHost,
 		graphitePort:      graphitePort,
+		graphitePrefix:    graphitePrefix,
 		interval:          interval,
 	}
 }

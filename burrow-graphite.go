@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"os"
 
-  log "github.com/Sirupsen/logrus"
+    log "github.com/Sirupsen/logrus"
 	"github.com/urfave/cli"
 
 	"context"
 	"os/signal"
 	"syscall"
-  "github.com/rgannu/burrow-graphite/burrow_graphite"
+    "github.com/rgannu/burrow-graphite/burrow_graphite"
 )
 
-var Version = "0.1"
+var Version = "0.2"
 
 func main() {
 	app := cli.NewApp()
@@ -31,6 +31,10 @@ func main() {
 		cli.IntFlag{
 			Name:  "graphite-port",
 			Usage: "The graphite port",
+		},
+		cli.StringFlag{
+			Name:  "graphite-prefix",
+			Usage: "Prefix to publish metrics under",
 		},
 		cli.IntFlag{
 			Name:  "interval",
@@ -56,6 +60,13 @@ func main() {
 		    graphitePort = c.Int("graphite-port")
 		}
 
+    var graphitePrefix = "services"
+		if !c.IsSet("graphite-prefix") {
+			fmt.Println("The graphite prefix is not set. Defaulting to services (e.g. --graphite-prefix foo)")
+        } else {
+		    graphitePrefix = c.String("graphite-prefix")
+		}
+
 		if !c.IsSet("interval") {
 			fmt.Println("A scrape interval is required (e.g. --interval 30)")
 			os.Exit(1)
@@ -67,7 +78,7 @@ func main() {
 
 		ctx, cancel := context.WithCancel(context.Background())
 
-		exporter := burrow_graphite.MakeBurrowExporter(c.String("burrow-addr"), c.String("graphite-host"), graphitePort, c.Int("interval"))
+		exporter := burrow_graphite.MakeBurrowExporter(c.String("burrow-addr"), c.String("graphite-host"), graphitePort, c.String("graphite-prefix"), c.Int("interval"))
 		go exporter.Start(ctx)
 
 		<-done
